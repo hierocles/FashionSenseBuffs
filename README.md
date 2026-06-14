@@ -97,12 +97,9 @@ The outfit ID is Fashion Sense's internal name, not the label shown in the outfi
 
 The [`examples/`](examples/) folder contains sample Content Patcher packs and helper scripts:
 
-| Path                                                                                                     | Description                                                                                                                                 |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`examples/[CP] PDW Outfit Buffs/`](examples/%5BCP%5D%20PDW%20Outfit%20Buffs/)                           | Maps Fern / Farmer 2.0 ESWF PDW outfits (27 outdoor names including seasonal variants) to PDW protection buffs. Requires `kath.weathering`. |
-| [`examples/[CP] Weather Wonders Outfit Buffs/`](examples/%5BCP%5D%20Weather%20Wonders%20Outfit%20Buffs/) | Similar mappings for Weather Wonders–style outfit names.                                                                                    |
-| [`examples/FernPreset/Outfits.json`](examples/FernPreset/Outfits.json)                                   | Generated Fashion Sense outfit preset (see `scripts/generate_fern_outfits.py`).                                                             |
-| [`scripts/`](scripts/)                                                                                   | Python helpers for generating example CP content from outfit presets.                                                                       |
+| Path                                                                           | Description                                                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`examples/[CP] PDW Outfit Buffs/`](examples/%5BCP%5D%20PDW%20Outfit%20Buffs/) | Maps Fern Preset / Farmer 2.0 ESWF PDW outfits (27 outdoor names including seasonal variants) to PDW protection buffs. Requires `kath.weathering`. Based on [Fern Farmer 2.0 Preset](https://www.nexusmods.com/stardewvalley/mods/39037) by Dexnis. |
 
 Copy a `[CP]` folder into your `Mods` directory to use it as a standalone pack.
 
