@@ -1,0 +1,14 @@
+{
+  "WinterCoat": {
+    "BuffIds": [ "PDWKittyMuffs" ]
+  },
+  "RainyDayGear": {
+    "BuffIds": [ "PDWShader", "PDWMask" ]
+  },
+  "DesertExplorer": {
+    "BuffIds": [ "PDWUVGoggles" ]
+  },
+  "BugProof": {
+    "BuffIds": [ "PDWBugNet" ]
+  }
+}
