@@ -1,0 +1,56 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build mod",
+            "detail": "MSBuild (same as Visual Studio Build). Compiles the mod and packages _releases/*.zip via ModBuildConfig.",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "msbuild",
+                "${workspaceFolder}/FashionSenseBuffs.csproj",
+                "/restore",
+                "/t:Build",
+                "/p:Configuration=Release",
+                "/p:Platform=AnyCPU",
+                "/p:EnableModZip=true",
+                "/p:EnableModDeploy=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": false
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build mod (Debug)",
+            "detail": "Debug build with zip packaging (ModBuildConfig).",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "msbuild",
+                "${workspaceFolder}/FashionSenseBuffs.csproj",
+                "/restore",
+                "/t:Build",
+                "/p:Configuration=Debug",
+                "/p:Platform=AnyCPU",
+                "/p:EnableModZip=true",
+                "/p:EnableModDeploy=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": false
+            },
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
