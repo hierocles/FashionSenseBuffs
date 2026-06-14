@@ -1,0 +1,25 @@
+{
+  "Name": "PDW Outfit Buffs",
+  "Author": "hierocles",
+  "Version": "0.0.1-alpha",
+  "Description": "Content Patcher pack that maps Fern preset Project Danger Weather Fashion Sense outfits to matching PDW protection buffs.",
+  "UniqueID": "hierocles.PDWOutfitBuffs",
+  "ContentPackFor": {
+    "UniqueID": "Pathoschild.ContentPatcher"
+  },
+  "Dependencies": [
+    {
+      "UniqueID": "PeacefulEnd.FashionSense", 
+      "IsRequired": true
+    },
+    {
+      "UniqueID": "hierocles.FashionSenseBuffs",
+      "IsRequired": true
+    },
+    {
+      "UniqueID": "kath.weathering",
+      "IsRequired": true
+    }
+  ],
+  "UpdateKeys": []
+}

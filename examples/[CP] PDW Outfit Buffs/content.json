@@ -1,0 +1,85 @@
+{
+  "Format": "2.4.0",
+  "Changes": [
+    {
+      "Action": "EditData",
+      "Target": "hierocles.FashionSenseBuffs/Outfits",
+      "Entries": {
+        "Heavy Rain": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        },
+        "Meatballs": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        },
+        "Locust": {
+          "BuffIds": [
+            "PDWBugNet"
+          ]
+        },
+        "Tornado": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        },
+        "Heat Wave": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        },
+        "Wildfire": {
+          "BuffIds": [
+            "PDWMask"
+          ]
+        },
+        "Dry Lightning": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Sandstorm": {
+          "BuffIds": [
+            "PDWUVGoggles"
+          ]
+        },
+        "Acid Rain": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        },
+        "Mud Rain": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Smog": {
+          "BuffIds": [
+            "PDWMask"
+          ]
+        },
+        "Hail": {
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ]
+        },
+        "Blizzard": {
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ]
+        },
+        "Tropical Storm": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        }
+      }
+    }
+  ]
+}
