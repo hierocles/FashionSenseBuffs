@@ -6,78 +6,57 @@
       "Target": "hierocles.FashionSenseBuffs/Outfits",
       "Entries": {
         "Heavy Rain": {
-          "BuffIds": [
-            "PDWShader"
-          ]
+          "BuffIds": [ "PDWShader" ],
+          "RemoveBuffIds": [ "SomeWeather1" ]
         },
         "Meatballs": {
-          "BuffIds": [
-            "PDWShader"
-          ]
+          "BuffIds": [ "PDWShader" ]
         },
         "Locust": {
-          "BuffIds": [
-            "PDWBugNet"
-          ]
+          "BuffIds": [ "PDWBugNet" ],
+          "RemoveBuffIds": [ "Badbugs" ]
         },
         "Tornado": {
-          "BuffIds": [
-            "PDWShader"
-          ]
+          "BuffIds": [ "PDWShader" ],
+          "RemoveBuffIds": [ "ExistentialDread" ]
         },
         "Heat Wave": {
-          "BuffIds": [
-            "PDWShader"
-          ]
+          "BuffIds": [ "PDWShader" ],
+          "RemoveBuffIds": [ "AngryWeather2" ]
         },
         "Wildfire": {
-          "BuffIds": [
-            "PDWMask"
-          ]
+          "BuffIds": [ "PDWMask" ],
+          "RemoveBuffIds": [ "SmokeySinging" ]
         },
         "Dry Lightning": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
+          "BuffIds": [ "PDWShader", "PDWMask" ]
         },
         "Sandstorm": {
-          "BuffIds": [
-            "PDWUVGoggles"
-          ]
+          "BuffIds": [ "PDWUVGoggles" ],
+          "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
         },
         "Acid Rain": {
-          "BuffIds": [
-            "PDWShader"
-          ]
+          "BuffIds": [ "PDWShader" ],
+          "RemoveBuffIds": [ "Firerain" ]
         },
         "Mud Rain": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
+          "BuffIds": [ "PDWShader", "PDWMask" ]
         },
         "Smog": {
-          "BuffIds": [
-            "PDWMask"
-          ]
+          "BuffIds": [ "PDWMask" ],
+          "RemoveBuffIds": [ "SmoggySinging1" ]
         },
         "Hail": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ]
+          "BuffIds": [ "PDWKittyMuffs", "PDWUVGoggles" ],
+          "RemoveBuffIds": [ "SomeWeather1", "AngryWeather1" ]
         },
         "Blizzard": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ]
+          "BuffIds": [ "PDWKittyMuffs", "PDWUVGoggles" ],
+          "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
         },
         "Tropical Storm": {
-          "BuffIds": [
-            "PDWShader"
-          ]
+          "BuffIds": [ "PDWShader" ],
+          "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
         }
       }
     }

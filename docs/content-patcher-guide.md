@@ -47,6 +47,7 @@ The asset is a dictionary. Each entry maps one Fashion Sense outfit to a list of
 | --- | --- | --- |
 | Key | `string` | The Fashion Sense outfit ID (see [Finding Outfit IDs](#finding-outfit-ids)) |
 | `BuffIds` | `string[]` | One or more buff IDs from `Data/Buffs` to apply while this outfit is active |
+| `RemoveBuffIds` | `string[]` | Optional. Buff IDs to remove from the player while this outfit is active (e.g. weather debuffs that linger after protection is applied) |
 
 ### Example — single buff
 
@@ -57,6 +58,23 @@ The asset is a dictionary. Each entry maps one Fashion Sense outfit to a list of
   "Entries": {
     "WarmWinterCoat": {
       "BuffIds": [ "PDWKittyMuffs" ]
+    }
+  }
+}
+```
+
+### Example — apply and remove buffs
+
+Use `RemoveBuffIds` when a weather mod applies debuffs before your protection buff is active, or re-applies them on a timer. While the outfit is worn, listed debuffs are stripped whenever they appear.
+
+```json
+{
+  "Action": "EditData",
+  "Target": "hierocles.FashionSenseBuffs/Outfits",
+  "Entries": {
+    "AcidRainGear": {
+      "BuffIds": [ "PDWShader" ],
+      "RemoveBuffIds": [ "Firerain" ]
     }
   }
 }

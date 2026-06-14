@@ -1,14 +1,18 @@
 {
   "WinterCoat": {
-    "BuffIds": [ "PDWKittyMuffs" ]
+    "BuffIds": [ "PDWKittyMuffs" ],
+    "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2", "AngryWeather1" ]
   },
   "RainyDayGear": {
-    "BuffIds": [ "PDWShader", "PDWMask" ]
+    "BuffIds": [ "PDWShader", "PDWMask" ],
+    "RemoveBuffIds": [ "Firerain", "SomeWeather1", "AngryWeather2", "SmoggySinging1" ]
   },
   "DesertExplorer": {
-    "BuffIds": [ "PDWUVGoggles" ]
+    "BuffIds": [ "PDWUVGoggles" ],
+    "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
   },
   "BugProof": {
-    "BuffIds": [ "PDWBugNet" ]
+    "BuffIds": [ "PDWBugNet" ],
+    "RemoveBuffIds": [ "Badbugs" ]
   }
 }

@@ -48,12 +48,13 @@ Edit `Mods/FashionSenseBuffs/assets/outfits.json` to add mappings directly:
     "BuffIds": [ "PDWKittyMuffs" ]
   },
   "FullRainGear": {
-    "BuffIds": [ "PDWShader", "PDWMask" ]
+    "BuffIds": [ "PDWShader", "PDWMask" ],
+    "RemoveBuffIds": [ "Firerain", "SmoggySinging1" ]
   }
 }
 ```
 
-Each key is a Fashion Sense **outfit ID** (not the display name). Each entry's `BuffIds` array lists buff IDs from `Data/Buffs`.
+Each key is a Fashion Sense **outfit ID** (not the display name). Each entry's `BuffIds` array lists buff IDs to apply from `Data/Buffs`. Optionally, `RemoveBuffIds` lists debuffs (or any buff IDs) to strip while the outfit is active.
 
 Built-in data loads at low priority, so Content Patcher `EditData` patches always override these entries.
 
@@ -114,6 +115,18 @@ dotnet build
 ```
 
 SMAPI's mod build config copies the output to your game's `Mods` folder when `EnableModDeploy` is configured, or you can copy `bin/Debug/net6.0/` manually.
+
+### Versioning and releases
+
+- Use [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`).
+- Write commit messages using [Conventional Commits](https://www.conventionalcommits.org/) (for example, `feat:`, `fix:`, `docs:`).
+- Bump `<Version>` in `FashionSenseBuffs.csproj` before publishing; `manifest.json` reads it via `%ProjectVersion%`.
+- When ready to publish a release, push a new tag `vx.y.z` (for example, `v1.0.0`). That triggers the [release workflow](.github/workflows/release.yml), which builds the mod and creates a GitHub release.
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
 
 ## License
 
