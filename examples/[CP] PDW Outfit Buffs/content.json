@@ -5,58 +5,214 @@
       "Action": "EditData",
       "Target": "hierocles.FashionSenseBuffs/Outfits",
       "Entries": {
-        "Heavy Rain": {
-          "BuffIds": [ "PDWShader" ],
-          "RemoveBuffIds": [ "SomeWeather1" ]
-        },
-        "Meatballs": {
-          "BuffIds": [ "PDWShader" ]
-        },
-        "Locust": {
-          "BuffIds": [ "PDWBugNet" ],
-          "RemoveBuffIds": [ "Badbugs" ]
-        },
-        "Tornado": {
-          "BuffIds": [ "PDWShader" ],
-          "RemoveBuffIds": [ "ExistentialDread" ]
-        },
-        "Heat Wave": {
-          "BuffIds": [ "PDWShader" ],
-          "RemoveBuffIds": [ "AngryWeather2" ]
-        },
-        "Wildfire": {
-          "BuffIds": [ "PDWMask" ],
-          "RemoveBuffIds": [ "SmokeySinging" ]
-        },
-        "Dry Lightning": {
-          "BuffIds": [ "PDWShader", "PDWMask" ]
-        },
-        "Sandstorm": {
-          "BuffIds": [ "PDWUVGoggles" ],
-          "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
-        },
         "Acid Rain": {
-          "BuffIds": [ "PDWShader" ],
-          "RemoveBuffIds": [ "Firerain" ]
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "Firerain"
+          ]
         },
-        "Mud Rain": {
-          "BuffIds": [ "PDWShader", "PDWMask" ]
+        "Acid Rain Spring": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "Firerain"
+          ]
         },
-        "Smog": {
-          "BuffIds": [ "PDWMask" ],
-          "RemoveBuffIds": [ "SmoggySinging1" ]
-        },
-        "Hail": {
-          "BuffIds": [ "PDWKittyMuffs", "PDWUVGoggles" ],
-          "RemoveBuffIds": [ "SomeWeather1", "AngryWeather1" ]
+        "Acid Rain Summer": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "Firerain"
+          ]
         },
         "Blizzard": {
-          "BuffIds": [ "PDWKittyMuffs", "PDWUVGoggles" ],
-          "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "SomeWeather2"
+          ]
+        },
+        "Blizzard Winter": {
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "SomeWeather2"
+          ]
+        },
+        "Dry Lightning": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Dry Lightning Fall": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Dry Lightning Spring": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Dry Lightning Summer": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Dry Lightning Winter": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Hail": {
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "AngryWeather1"
+          ]
+        },
+        "Hailstorm Fall": {
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "AngryWeather1"
+          ]
+        },
+        "Hailstorm Summer": {
+          "BuffIds": [
+            "PDWKittyMuffs",
+            "PDWUVGoggles"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "AngryWeather1"
+          ]
+        },
+        "Heat Wave": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "AngryWeather2"
+          ]
+        },
+        "Heatwaves Spring": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "AngryWeather2"
+          ]
+        },
+        "Heatwaves Summer": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "AngryWeather2"
+          ]
+        },
+        "Heavy Rain": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1"
+          ]
+        },
+        "Locust": {
+          "BuffIds": [
+            "PDWBugNet"
+          ],
+          "RemoveBuffIds": [
+            "Badbugs"
+          ]
+        },
+        "Meatballs": {
+          "BuffIds": [
+            "PDWShader"
+          ]
+        },
+        "Mud Rain": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Muddy Rain Spring": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Muddy Rain Summer": {
+          "BuffIds": [
+            "PDWShader",
+            "PDWMask"
+          ]
+        },
+        "Sandstorm": {
+          "BuffIds": [
+            "PDWUVGoggles"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "SomeWeather2"
+          ]
+        },
+        "Smog": {
+          "BuffIds": [
+            "PDWMask"
+          ],
+          "RemoveBuffIds": [
+            "SmoggySinging1"
+          ]
+        },
+        "Tornado": {
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "ExistentialDread"
+          ]
         },
         "Tropical Storm": {
-          "BuffIds": [ "PDWShader" ],
-          "RemoveBuffIds": [ "SomeWeather1", "SomeWeather2" ]
+          "BuffIds": [
+            "PDWShader"
+          ],
+          "RemoveBuffIds": [
+            "SomeWeather1",
+            "SomeWeather2"
+          ]
+        },
+        "Wildfire": {
+          "BuffIds": [
+            "PDWMask"
+          ],
+          "RemoveBuffIds": [
+            "SmokeySinging"
+          ]
         }
       }
     }

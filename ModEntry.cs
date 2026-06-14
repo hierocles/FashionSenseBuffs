@@ -13,8 +13,17 @@ public class ModEntry : Mod
     private ModConfig _config = new();
     private Dictionary<string, OutfitBuffEntry> _outfitData = new();
     private string? _currentOutfitId;
+    private string? _pendingOutfitId;
+    private int _pendingOutfitTicks;
     private readonly List<string> _activeBuffIds = new();
     private readonly List<string> _activeRemoveBuffIds = new();
+    private string? _lastLoggedUnmappedOutfit;
+
+    /// <summary>Consecutive reads required before switching away from the current outfit.</summary>
+    private const int OutfitChangeStableTicks = 3;
+
+    /// <summary>How often to poll Fashion Sense for outfit-id changes.</summary>
+    private const int OutfitPollIntervalTicks = 15;
 
     public override void Entry(IModHelper helper)
     {
@@ -24,14 +33,10 @@ public class ModEntry : Mod
         helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
         helper.Events.GameLoop.DayStarted += OnDayStarted;
         helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
-        helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+        helper.Events.GameLoop.UpdateTicked += OnOutfitPollTicked;
+        helper.Events.GameLoop.UpdateTicked += OnApplyProtectionBuffs;
+        helper.Events.GameLoop.UpdateTicked += OnStripWeatherDebuffs;
         helper.Events.Content.AssetRequested += OnAssetRequested;
-
-        helper.ConsoleCommands.Add(
-            "fsb_force_pdw_weather",
-            "Force today's PDW weather for testing. Usage: fsb_force_pdw_weather \"Heavy Rain\"\nRequires Cloudy Skies + Project Danger Weather (host only).",
-            (_, args) => ForcePdwWeatherFromConsole(args)
-        );
     }
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -53,7 +58,6 @@ public class ModEntry : Mod
     {
         if (!e.Name.IsEquivalentTo(AssetPath)) return;
 
-        // Provide the base data from assets/outfits.json; CP and other mods can then EditData on top.
         e.LoadFrom(
             () => Helper.Data.ReadJsonFile<Dictionary<string, OutfitBuffEntry>>("assets/outfits.json")
                   ?? new Dictionary<string, OutfitBuffEntry>(),
@@ -65,82 +69,264 @@ public class ModEntry : Mod
     {
         Helper.GameContent.InvalidateCache(AssetPath);
         LoadOutfitData();
-        _currentOutfitId = null;
-        _activeBuffIds.Clear();
-        _activeRemoveBuffIds.Clear();
-        ApplyDebugPdwWeather();
+        ResetOutfitState();
     }
 
     private void OnDayStarted(object? sender, DayStartedEventArgs e)
     {
-        // Invalidate so CP patches with day/season conditions are re-evaluated.
         Helper.GameContent.InvalidateCache(AssetPath);
         LoadOutfitData();
-        _currentOutfitId = null;
-        ApplyDebugPdwWeather();
+        ResetOutfitState();
         ApplyBuffsForCurrentOutfit();
     }
 
     private void OnReturnedToTitle(object? sender, ReturnedToTitleEventArgs e)
     {
+        ResetOutfitState();
+    }
+
+    private void ResetOutfitState()
+    {
         _currentOutfitId = null;
+        _pendingOutfitId = null;
+        _pendingOutfitTicks = 0;
         _activeBuffIds.Clear();
         _activeRemoveBuffIds.Clear();
     }
 
     private void OnSpriteDirty(object? sender, EventArgs e)
     {
-        if (!Context.IsPlayerFree) return;
+        if (!CanRun()) return;
         ApplyBuffsForCurrentOutfit();
     }
 
-    private void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+    private void OnOutfitPollTicked(object? sender, UpdateTickedEventArgs e)
     {
-        // Fallback poll in case SetSpriteDirtyTriggered doesn't fire for outfit switches.
-        if (!e.IsMultipleOf(60) || !Context.IsPlayerFree) return;
-        ApplyBuffsForCurrentOutfit();
-        RemoveConfiguredBuffs(_activeRemoveBuffIds);
+        if (!CanRun()) return;
+
+        if (e.IsMultipleOf(OutfitPollIntervalTicks))
+            ApplyBuffsForCurrentOutfit();
+    }
+
+    /// <summary>
+    /// Apply protection before Cloudy Skies / PDW weather effects run so PLAYER_HAS_BUFF checks succeed.
+    /// </summary>
+    [EventPriority(EventPriority.High)]
+    private void OnApplyProtectionBuffs(object? sender, UpdateTickedEventArgs e)
+    {
+        if (!CanRun()) return;
+
+        var readOutfitId = ReadCurrentOutfitId();
+        var protectionOutfitId = GetOutfitIdForProtection(readOutfitId);
+        if (!TryGetMappedEntry(protectionOutfitId, out _, out var entry))
+            return;
+
+        EnsureProtectionBuffs(entry.BuffIds, logApply: false);
+    }
+
+    /// <summary>
+    /// Strip configured weather debuffs after weather mods run, but only while protection is active.
+    /// </summary>
+    [EventPriority(EventPriority.Low)]
+    private void OnStripWeatherDebuffs(object? sender, UpdateTickedEventArgs e)
+    {
+        if (!CanRun()) return;
+
+        var readOutfitId = ReadCurrentOutfitId();
+        var protectionOutfitId = GetOutfitIdForProtection(readOutfitId);
+        if (!TryGetMappedEntry(protectionOutfitId, out _, out var entry))
+            return;
+
+        if (!HasAllProtectionBuffs(entry.BuffIds))
+            return;
+
+        StripConfiguredDebuffs(entry.RemoveBuffIds, logRemove: false);
+    }
+
+    private bool CanRun()
+    {
+        return _fsApi is not null && _config.Enabled && Context.IsPlayerFree;
+    }
+
+    private string? ReadCurrentOutfitId()
+    {
+        var result = _fsApi!.GetCurrentOutfitId();
+        return result.Key ? result.Value : null;
     }
 
     private void ApplyBuffsForCurrentOutfit()
     {
-        if (_fsApi is null || !_config.Enabled) return;
+        if (!CanRun()) return;
 
-        var result = _fsApi.GetCurrentOutfitId();
-        // result.Key is false when no outfit is active.
-        string? newOutfitId = result.Key ? result.Value : null;
+        var readOutfitId = ReadCurrentOutfitId();
+        var outfitId = ResolveCommittedOutfitId(readOutfitId);
 
-        if (newOutfitId == _currentOutfitId) return;
+        if (outfitId == _currentOutfitId)
+            return;
 
-        RemoveActiveBuffs();
-        _activeRemoveBuffIds.Clear();
-        _currentOutfitId = newOutfitId;
+        CommitOutfitChange(outfitId);
+    }
 
-        if (newOutfitId is null) return;
+    /// <summary>
+    /// Apply protection immediately when switching to a mapped outfit; debounce only when switching away.
+    /// </summary>
+    private string? GetOutfitIdForProtection(string? readOutfitId)
+    {
+        if (readOutfitId is not null && TryGetMappedEntry(readOutfitId, out _, out _))
+            return readOutfitId;
 
-        // Case-insensitive lookup against the dictionary keys.
-        var key = _outfitData.Keys.FirstOrDefault(k =>
-            string.Equals(k, newOutfitId, StringComparison.OrdinalIgnoreCase));
-        if (key is null) return;
+        return ResolveCommittedOutfitId(readOutfitId);
+    }
 
-        var entry = _outfitData[key];
-        _activeRemoveBuffIds.AddRange(entry.RemoveBuffIds);
+    /// <summary>
+    /// Ignore brief outfit-id flicker from Fashion Sense so we do not drop protection buffs for a frame.
+    /// </summary>
+    private string? ResolveCommittedOutfitId(string? readOutfitId)
+    {
+        if (readOutfitId == _currentOutfitId)
+        {
+            _pendingOutfitId = readOutfitId;
+            _pendingOutfitTicks = OutfitChangeStableTicks;
+            return _currentOutfitId;
+        }
 
-        var buffData = DataLoader.Buffs(Game1.content);
+        if (readOutfitId != _pendingOutfitId)
+        {
+            _pendingOutfitId = readOutfitId;
+            _pendingOutfitTicks = 1;
+            return _currentOutfitId;
+        }
+
+        _pendingOutfitTicks++;
+        return _pendingOutfitTicks >= OutfitChangeStableTicks ? _pendingOutfitId : _currentOutfitId;
+    }
+
+    private void CommitOutfitChange(string? newOutfitId)
+    {
+        if (newOutfitId is null)
+        {
+            RemoveActiveBuffs();
+            _activeRemoveBuffIds.Clear();
+            _currentOutfitId = null;
+            return;
+        }
+
+        if (!TryGetMappedEntry(newOutfitId, out var key, out var entry))
+        {
+            if (!string.Equals(_lastLoggedUnmappedOutfit, newOutfitId, StringComparison.OrdinalIgnoreCase))
+            {
+                Monitor.Log($"No buff mapping for outfit '{newOutfitId}'.", LogLevel.Debug);
+                _lastLoggedUnmappedOutfit = newOutfitId;
+            }
+
+            RemoveActiveBuffs();
+            _activeRemoveBuffIds.Clear();
+            _currentOutfitId = newOutfitId;
+            return;
+        }
+
+        _lastLoggedUnmappedOutfit = null;
+
+        EnsureProtectionBuffs(entry.BuffIds, logApply: true, outfitId: newOutfitId, mappingKey: key);
+        StripConfiguredDebuffs(entry.RemoveBuffIds, logRemove: true);
+
+        foreach (var buffId in _activeBuffIds.ToList())
+        {
+            if (entry.BuffIds.Contains(buffId, StringComparer.OrdinalIgnoreCase))
+                continue;
+
+            Game1.player.buffs.Remove(buffId);
+            Monitor.Log($"Removed buff '{buffId}' (outfit changed to '{newOutfitId}').", LogLevel.Trace);
+        }
+
+        _activeBuffIds.Clear();
         foreach (var buffId in entry.BuffIds)
         {
-            if (!buffData.ContainsKey(buffId))
+            if (BuffExists(buffId))
+                _activeBuffIds.Add(buffId);
+        }
+
+        _activeRemoveBuffIds.Clear();
+        _activeRemoveBuffIds.AddRange(entry.RemoveBuffIds);
+        _currentOutfitId = newOutfitId;
+    }
+
+    private void EnsureProtectionBuffs(
+        IReadOnlyList<string> buffIds,
+        bool logApply,
+        string? outfitId = null,
+        string? mappingKey = null)
+    {
+        foreach (var buffId in buffIds)
+        {
+            if (!BuffExists(buffId))
             {
-                Monitor.Log($"Buff '{buffId}' not found in Data/Buffs.", LogLevel.Warn);
+                if (logApply)
+                    Monitor.Log($"Buff '{buffId}' not found in Data/Buffs.", LogLevel.Warn);
                 continue;
             }
 
-            Game1.player.applyBuff(new Buff(buffId));
-            _activeBuffIds.Add(buffId);
-            Monitor.Log($"Applied buff '{buffId}' for outfit '{newOutfitId}'.", LogLevel.Trace);
+            if (Game1.player.hasBuff(buffId))
+                continue;
+
+            Game1.player.applyBuff(buffId);
+
+            if (!logApply)
+                continue;
+
+            Monitor.Log(
+                $"Applied buff '{buffId}' for outfit '{outfitId}' (mapping '{mappingKey}').",
+                LogLevel.Trace);
+        }
+    }
+
+    private bool HasAllProtectionBuffs(IReadOnlyList<string> buffIds)
+    {
+        foreach (var buffId in buffIds)
+        {
+            if (!BuffExists(buffId))
+                continue;
+
+            if (!Game1.player.hasBuff(buffId))
+                return false;
         }
 
-        RemoveConfiguredBuffs(_activeRemoveBuffIds);
+        return buffIds.Any(BuffExists);
+    }
+
+    private void StripConfiguredDebuffs(IReadOnlyList<string> buffIds, bool logRemove)
+    {
+        if (buffIds.Count == 0) return;
+
+        foreach (var buffId in buffIds)
+        {
+            if (!Game1.player.hasBuff(buffId))
+                continue;
+
+            Game1.player.buffs.Remove(buffId);
+
+            if (logRemove)
+                Monitor.Log($"Removed buff '{buffId}' for outfit '{_currentOutfitId}'.", LogLevel.Trace);
+        }
+    }
+
+    private bool TryGetMappedEntry(
+        string? outfitId,
+        out string matchedKey,
+        out OutfitBuffEntry entry)
+    {
+        matchedKey = null!;
+        entry = null!;
+
+        if (outfitId is null)
+            return false;
+
+        return OutfitMappingResolver.TryResolve(outfitId, _outfitData, out matchedKey, out entry);
+    }
+
+    private static bool BuffExists(string buffId)
+    {
+        return DataLoader.Buffs(Game1.content).ContainsKey(buffId);
     }
 
     private void RemoveActiveBuffs()
@@ -148,19 +334,6 @@ public class ModEntry : Mod
         foreach (var buffId in _activeBuffIds)
             Game1.player.buffs.Remove(buffId);
         _activeBuffIds.Clear();
-    }
-
-    private void RemoveConfiguredBuffs(IReadOnlyList<string> buffIds)
-    {
-        if (buffIds.Count == 0) return;
-
-        foreach (var buffId in buffIds)
-        {
-            if (!Game1.player.buffs.AppliedBuffs.ContainsKey(buffId)) continue;
-
-            Game1.player.buffs.Remove(buffId);
-            Monitor.Log($"Removed buff '{buffId}' for outfit '{_currentOutfitId}'.", LogLevel.Trace);
-        }
     }
 
     private void LoadOutfitData()
@@ -221,73 +394,5 @@ public class ModEntry : Mod
 
         gmcm.AddParagraph(ModManifest, () =>
             $"Note: Outfit mapping won't show up here until a save is first loaded!");
-
-        gmcm.AddSectionTitle(ModManifest, () => "Debug (PDW testing)");
-
-        gmcm.AddBoolOption(
-            mod: ModManifest,
-            getValue: () => _config.DebugForcePdwWeather,
-            setValue: v =>
-            {
-                _config.DebugForcePdwWeather = v;
-                if (v)
-                    ApplyDebugPdwWeather();
-            },
-            name: () => "Force PDW weather",
-            tooltip: () =>
-                "When enabled, sets today's weather to the selected PDW type on load and each morning.\n" +
-                "Host only. Requires Cloudy Skies and Project Danger Weather."
-        );
-
-        gmcm.AddTextOption(
-            mod: ModManifest,
-            getValue: () => _config.DebugPdwWeather,
-            setValue: v =>
-            {
-                _config.DebugPdwWeather = v;
-                if (_config.DebugForcePdwWeather)
-                    ApplyDebugPdwWeather();
-            },
-            name: () => "PDW weather type",
-            tooltip: () => "Which Project Danger Weather event to force while debugging.",
-            allowedValues: PdwWeatherDebug.WeatherChoices.ToArray()
-        );
-
-        gmcm.AddParagraph(ModManifest, () =>
-            "Console: fsb_force_pdw_weather \"Heavy Rain\" — force weather once without enabling the toggle above.");
-    }
-
-    private void ApplyDebugPdwWeather()
-    {
-        if (!Context.IsWorldReady || !Context.IsMainPlayer)
-            return;
-
-        PdwWeatherDebug.ApplyIfEnabled(Helper, Monitor, _config);
-    }
-
-    private void ForcePdwWeatherFromConsole(string[] args)
-    {
-        var displayName = string.Join(' ', args);
-        if (string.IsNullOrWhiteSpace(displayName))
-        {
-            Monitor.Log(
-                $"Usage: fsb_force_pdw_weather \"{PdwWeatherDebug.WeatherChoices[0]}\"\n" +
-                $"Choices: {string.Join(", ", PdwWeatherDebug.WeatherChoices)}",
-                LogLevel.Info
-            );
-            return;
-        }
-
-        if (!PdwWeatherDebug.TryGetWeatherId(displayName, out var weatherId))
-        {
-            Monitor.Log(
-                $"Unknown weather '{displayName}'. Choices: {string.Join(", ", PdwWeatherDebug.WeatherChoices)}",
-                LogLevel.Error
-            );
-            return;
-        }
-
-        if (PdwWeatherDebug.TryForceWeather(Helper, Monitor, weatherId))
-            Monitor.Log($"Forced PDW weather to {displayName} ({weatherId}).", LogLevel.Info);
     }
 }

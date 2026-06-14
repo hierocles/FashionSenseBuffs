@@ -1,0 +1,36 @@
+PDW internal buff IDs used in content.json (from kath.weathering Data/Buffs):
+
+SomeWeather1     — "Some Weather Huh?" sludge-walk debuff (Heavy Rain, Hail, Blizzard, etc.)
+SomeWeather2     — second sludge-walk variant
+Firerain         — Acid rain burn debuff
+Badbugs          — Locust swarm debuff
+ExistentialDread — Tornado watch dread debuff
+AngryWeather1    — Hail anger debuff
+AngryWeather2    — Heat wave anger debuff
+SmokeySinging    — Wildfire smoke debuff
+SmoggySinging1   — Smog debuff
+
+Protection buff IDs (applied via BuffIds):
+PDWShader, PDWMask, PDWUVGoggles, PDWKittyMuffs, PDWBugNet
+
+When a protection buff is active, PDW normally skips applying the matching debuff.
+RemoveBuffIds clears debuffs that were already present before protection kicked in.
+
+Example CP pack entries (27 total, outdoors only)
+-----------------------------------------------
+PDW weather effects only apply outdoors, so indoor outfit names are omitted.
+
+- 14 base PDW outfit names (Heavy Rain, Acid Rain, etc.)
+- 13 Fern / Farmer 2.0 ESWF seasonal & alias names, e.g.:
+  Acid Rain Spring/Summer
+  Heatwaves Spring/Summer  -> same buffs as Heat Wave
+  Dry Lightning Spring/Summer/Fall/Winter
+  Hailstorm Summer/Fall    -> same buffs as Hail
+  Muddy Rain Spring/Summer -> same buffs as Mud Rain
+  Blizzard Winter          -> same buffs as Blizzard
+
+The main mod still resolves * Indoor outfit names to these mappings if ESWF
+equips them, but they do not need explicit CP entries.
+
+Regenerate content.json after editing base mappings:
+  python scripts/generate_pdw_example.py
