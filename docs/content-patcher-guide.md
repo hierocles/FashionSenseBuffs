@@ -148,8 +148,6 @@ The easiest ways to find it:
 
 2. **Fashion Sense outfit files** — In a Fashion Sense content pack, the outfit ID is the key used in `preset_outfits.json` or the `Outfits` data asset.
 
-3. **SMAPI console command** — Fashion Sense may expose a console command to list outfit IDs; check its own documentation.
-
 ---
 
 ## Buff IDs
@@ -191,8 +189,14 @@ If two CP packs both add an entry with the same outfit ID, standard CP conflict 
     "UniqueID": "Pathoschild.ContentPatcher"
   },
   "Dependencies": [
-    { "UniqueID": "PeacefulEnd.FashionSense",        "IsRequired": true },
-    { "UniqueID": "hierocles.FashionSenseBuffs",      "IsRequired": true }
+    {
+      "UniqueID": "PeacefulEnd.FashionSense",
+      "IsRequired": true
+    },
+    {
+      "UniqueID": "hierocles.FashionSenseBuffs",
+      "IsRequired": true
+    }
   ],
   "UpdateKeys": []
 }
