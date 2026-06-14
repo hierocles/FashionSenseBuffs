@@ -177,5 +177,8 @@ public class ModEntry : Mod
 
         gmcm.AddParagraph(ModManifest, () =>
             $"To add mappings, edit assets/outfits.json or create a Content Patcher pack that targets \"{AssetPath}\" with an EditData action.");
+
+        gmcm.AddParagraph(ModManifest, () =>
+            $"Note: Outfit mapping won't show up here until a save is first loaded!");
     }
 }
