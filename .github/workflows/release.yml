@@ -1,0 +1,49 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - v*
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    id-token: write
+    attestations: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Fetch code
+              uses: actions/checkout@v4
+
+            - name: Add build environment
+              uses: Pathoschild/SMAPI-ModBuildWorkflow/add-build-environment@v1
+
+            - name: Add Fashion Sense reference
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  mkdir -p "reference/Fashion Sense/FashionSense"
+                  url=$(gh api repos/Floogen/FashionSense/releases/latest --jq '.assets[0].browser_download_url')
+                  curl -sL "$url" -o /tmp/fashionsense.zip
+                  unzip -o /tmp/fashionsense.zip "FashionSense/FashionSense.dll" -d /tmp/fashionsense
+                  cp /tmp/fashionsense/FashionSense/FashionSense.dll "reference/Fashion Sense/FashionSense/"
+
+            - name: Build mod
+              run: dotnet build --configuration Release
+
+            - name: Upload release artifacts
+              id: upload
+              uses: Pathoschild/SMAPI-ModBuildWorkflow/upload-release-artifacts@v1
+              with:
+                  create_attestations: ${{ github.ref_type == 'tag' }}
+
+            - name: Create GitHub release
+              if: github.ref_type == 'tag'
+              uses: ncipollo/release-action@v1
+              with:
+                  artifacts: _releases/*.zip
+                  generateReleaseNotes: true
+                  token: ${{ github.token }}

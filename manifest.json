@@ -1,7 +1,7 @@
 {
   "Name": "Fashion Sense Buffs",
   "Author": "hierocles",
-  "Version": "0.0.1-alpha",
+  "Version": "%ProjectVersion%",
   "Description": "Automatically applies buffs based on the active Fashion Sense outfit. Outfit-to-buff mappings are fully configurable and patchable by other mods via Content Patcher.",
   "UniqueID": "hierocles.FashionSenseBuffs",
   "EntryDll": "FashionSenseBuffs.dll",

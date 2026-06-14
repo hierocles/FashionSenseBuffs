@@ -2,4 +2,5 @@ reference/
 .claude
 bin/
 obj/
+_releases/
 scripts/
