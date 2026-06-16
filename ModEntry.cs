@@ -1,3 +1,4 @@
+using GenericModConfigMenu;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
@@ -368,31 +369,28 @@ public class ModEntry : Mod
                 }
             },
             name: () => "Enable outfit buffs",
-            tooltip: () => "When enabled, wearing a mapped Fashion Sense outfit automatically applies its buffs."
+            tooltip: () => "When enabled, wearing a mapped Fashion Sense outfit automatically applies its buffs or removes debuffs."
         );
 
         gmcm.AddSectionTitle(ModManifest, () => "Active Outfit Mappings");
 
-        gmcm.AddParagraph(ModManifest, () =>
-        {
-            if (_outfitData.Count == 0)
-                return "No mappings loaded. Provide data via assets/outfits.json or a Content Patcher pack targeting\n" + AssetPath;
-
-            return string.Join("\n", _outfitData.Select(kvp =>
-            {
-                var apply = string.Join(", ", kvp.Value.BuffIds);
-                if (kvp.Value.RemoveBuffIds.Count == 0)
-                    return $"{kvp.Key}  →  {apply}";
-
-                var remove = string.Join(", ", kvp.Value.RemoveBuffIds);
-                return $"{kvp.Key}  →  +[{apply}]  −[{remove}]";
-            }));
-        });
-
-        gmcm.AddParagraph(ModManifest, () =>
-            $"To add mappings, edit assets/outfits.json or create a Content Patcher pack that targets \"{AssetPath}\" with an EditData action.");
-
-        gmcm.AddParagraph(ModManifest, () =>
-            $"Note: Outfit mapping won't show up here until a save is first loaded!");
+        gmcm.AddTable(
+            mod: ModManifest,
+            getHeaders: () => new[] { "Outfit ID", "Apply Buffs", "Remove Buffs" },
+            getRows: () => _outfitData
+                .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(kvp => new[]
+                {
+                    kvp.Key,
+                    string.Join(", ", kvp.Value.BuffIds),
+                    kvp.Value.RemoveBuffIds.Count > 0
+                        ? string.Join(", ", kvp.Value.RemoveBuffIds)
+                        : ""
+                })
+                .ToList(),
+            emptyCellText: "—",
+            getEmptyMessage: () =>
+                "No mappings loaded. Note: Outfit mapping won't show up here until a save is first loaded!"
+        );
     }
 }

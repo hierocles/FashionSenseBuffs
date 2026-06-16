@@ -14,6 +14,10 @@
     {
       "UniqueID": "Pathoschild.ContentPatcher",
       "IsRequired": false
+    },
+    {
+      "UniqueID": "spacechase0.GenericModConfigMenu",
+      "IsRequired": false
     }
   ],
   "UpdateKeys": ["GitHub:hierocles/FashionSenseBuffs"]
