@@ -280,7 +280,7 @@ public class ModEntry : Mod
         }
     }
 
-    private bool HasAllProtectionBuffs(IReadOnlyList<string> buffIds)
+    private static bool HasAllProtectionBuffs(IReadOnlyList<string> buffIds)
     {
         foreach (var buffId in buffIds)
         {

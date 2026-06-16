@@ -31,6 +31,3 @@ PDW weather effects only apply outdoors, so indoor outfit names are omitted.
 
 The main mod still resolves * Indoor outfit names to these mappings if ESWF
 equips them, but they do not need explicit CP entries.
-
-Regenerate content.json after editing base mappings:
-  python scripts/generate_pdw_example.py
