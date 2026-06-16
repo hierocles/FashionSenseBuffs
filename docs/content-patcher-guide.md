@@ -154,7 +154,7 @@ Use `"null"` as the value to delete an entry added by another mod:
 
 ## Outfit name variants
 
-Fern / Farmer 2.0 ESWF presets use many outfit names for the same weather type — for example `Acid Rain Spring` or `Heatwaves Summer` alongside plain `Acid Rain`. You only need to map the **base** name (and seasonal outdoor names) in Content Patcher; Fashion Sense Buffs resolves other variants automatically:
+Farmer 2.0 ESWF presets use many outfit names for the same weather type — for example `Acid Rain Spring` or `Heatwaves Summer` alongside plain `Acid Rain`. You only need to map the **base** name (and seasonal outdoor names) in Content Patcher; Fashion Sense Buffs resolves other variants automatically:
 
 - **Indoor suffix** — `Acid Rain Indoor` matches a mapping for `Acid Rain` (PDW does not apply weather debuffs indoors, so explicit indoor CP entries are usually unnecessary)
 - **Season suffix** — `Acid Rain Spring`, `Dry Lightning Fall`, etc. match the base weather name
