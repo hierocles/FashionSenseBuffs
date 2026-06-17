@@ -1,24 +1,24 @@
 {
-  "Name": "Fashion Sense Buffs",
-  "Author": "hierocles",
-  "Version": "%ProjectVersion%",
-  "Description": "Automatically applies buffs based on the active Fashion Sense outfit. Outfit-to-buff mappings are fully configurable and patchable by other mods via Content Patcher.",
-  "UniqueID": "hierocles.FashionSenseBuffs",
-  "EntryDll": "FashionSenseBuffs.dll",
-  "MinimumApiVersion": "4.0.0",
-  "Dependencies": [
-    {
-      "UniqueID": "PeacefulEnd.FashionSense",
-      "IsRequired": true
-    },
-    {
-      "UniqueID": "Pathoschild.ContentPatcher",
-      "IsRequired": false
-    },
-    {
-      "UniqueID": "spacechase0.GenericModConfigMenu",
-      "IsRequired": false
-    }
-  ],
-  "UpdateKeys": ["GitHub:hierocles/FashionSenseBuffs"]
+    "Name": "Fashion Sense Buffs",
+    "Author": "hierocles",
+    "Version": "%ProjectVersion%",
+    "Description": "Automatically applies buffs based on the active Fashion Sense outfit. Outfit-to-buff mappings are fully configurable and patchable by other mods via Content Patcher.",
+    "UniqueID": "hierocles.FashionSenseBuffs",
+    "EntryDll": "FashionSenseBuffs.dll",
+    "MinimumApiVersion": "4.0.0",
+    "Dependencies": [
+        {
+            "UniqueID": "PeacefulEnd.FashionSense",
+            "IsRequired": true
+        },
+        {
+            "UniqueID": "Pathoschild.ContentPatcher",
+            "IsRequired": false
+        },
+        {
+            "UniqueID": "spacechase0.GenericModConfigMenu",
+            "IsRequired": false
+        }
+    ],
+    "UpdateKeys": ["GitHub:hierocles/FashionSenseBuffs", "Nexus:47677"]
 }
