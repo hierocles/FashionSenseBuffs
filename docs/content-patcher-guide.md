@@ -45,9 +45,11 @@ The asset is a dictionary. Each entry maps one Fashion Sense outfit to a list of
 
 | Field           | Type       | Description                                                                                                                                                                               |
 | --------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Key             | `string`   | The Fashion Sense outfit ID (see [Finding Outfit IDs](#finding-outfit-ids)). Seasonal and indoor variants can share one base mapping — see [Outfit name variants](#outfit-name-variants). |
+| Key             | `string`   | Primary Fashion Sense outfit name for this mapping (see [Finding Outfit IDs](#finding-outfit-ids)). |
 | `BuffIds`       | `string[]` | One or more buff IDs from `Data/Buffs` to apply while this outfit is active                                                                                                               |
 | `RemoveBuffIds` | `string[]` | Optional. Buff IDs to remove from the player while this outfit is active (e.g. weather debuffs that linger after protection is applied)                                                   |
+| `OutdoorsOnly`  | `bool`     | Optional. When `true`, buffs and `RemoveBuffIds` only apply while the player is outdoors. Defaults to `false`. Use for weather protection buffs that should not persist indoors.        |
+| `Aliases`       | `string[]` | Optional. Additional outfit names that share this mapping (exact match, case-insensitive). Use for seasonal, indoor, or mod-specific variants — see [Aliases](#aliases).                  |
 
 ### Example — single buff
 
@@ -76,7 +78,8 @@ PDW uses opaque internal IDs (e.g. `SomeWeather1` = “Some Weather Huh?” slud
     "Entries": {
         "AcidRainGear": {
             "BuffIds": ["PDWShader"],
-            "RemoveBuffIds": ["Firerain"]
+            "RemoveBuffIds": ["Firerain"],
+            "OutdoorsOnly": true
         }
     }
 }
@@ -150,17 +153,48 @@ Use `"null"` as the value to delete an entry added by another mod:
 }
 ```
 
+### Example — aliases for outfit name variants
+
+Fashion Sense exposes outfit **names** only — not a separate internal ID. Mods like Farmer 2.0 ESWF use many names for the same weather outfit (`Heavy Rain`, `Heavy Rain Indoor`, `Spring Indoor Rain`, etc.). Map the canonical name once and list the rest in `Aliases`:
+
+```json
+{
+    "Action": "EditData",
+    "Target": "hierocles.FashionSenseBuffs/Outfits",
+    "Entries": {
+        "Heavy Rain": {
+            "BuffIds": ["PDWShader"],
+            "RemoveBuffIds": ["SomeWeather1"],
+            "OutdoorsOnly": true,
+            "Aliases": [
+                "Heavy Rain Indoor",
+                "Spring Indoor Rain",
+                "Summer Indoor Rain",
+                "Fall Indoor Rain",
+                "Winter Indoor Rain"
+            ]
+        }
+    }
+}
+```
+
+If SMAPI logs `No buff mapping for outfit '…'`, add that exact string to `Aliases` on the matching entry (or as a new primary key). Lookup is exact match only — no automatic fuzzy resolution.
+
 ---
 
-## Outfit name variants
+## Aliases
 
-Farmer 2.0 ESWF presets use many outfit names for the same weather type — for example `Acid Rain Spring` or `Heatwaves Summer` alongside plain `Acid Rain`. You only need to map the **base** name (and seasonal outdoor names) in Content Patcher; Fashion Sense Buffs resolves other variants automatically:
+Use `Aliases` when multiple Fashion Sense outfit names should share one buff mapping. Each alias is matched **exactly** (case-insensitive) against the name Fashion Sense reports via its API.
 
-- **Indoor suffix** — `Acid Rain Indoor` matches a mapping for `Acid Rain` (PDW does not apply weather debuffs indoors, so explicit indoor CP entries are usually unnecessary)
-- **Season suffix** — `Acid Rain Spring`, `Dry Lightning Fall`, etc. match the base weather name
-- **Fern renames** — `Heatwaves …` → `Heat Wave`, `Hailstorm …` → `Hail`, `Muddy Rain …` → `Mud Rain`
+Typical uses:
 
-Map `Acid Rain` once; all seasonal and indoor acid-rain outfits inherit the same buffs and `RemoveBuffIds`.
+- **Indoor variants** — `{Weather} Indoor` or `{Season} Indoor {Weather}` (ESWF naming)
+- **Seasonal outdoor names** — `Acid Rain Spring`, `Dry Lightning Fall`, etc.
+- **Renamed presets** — `Heatwaves Spring` as an alias for a `Heat Wave` entry
+
+The primary dictionary key is also registered as a lookup name. Duplicate alias names across entries log a debug warning; the last loaded entry wins.
+
+Per-mapping outdoors-only overrides can also be toggled on the **Overrides** page in Generic Mod Config Menu without editing Content Patcher packs.
 
 ---
 

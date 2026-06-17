@@ -6,212 +6,185 @@
       "Target": "hierocles.FashionSenseBuffs/Outfits",
       "Entries": {
         "Acid Rain": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "Firerain"
-          ]
-        },
-        "Acid Rain Spring": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "Firerain"
-          ]
-        },
-        "Acid Rain Summer": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "Firerain"
+          "BuffIds": ["PDWShader"],
+          "RemoveBuffIds": ["Firerain"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Acid Rain Spring",
+            "Acid Rain Summer",
+            "Acid Rain Indoor",
+            "Spring Indoor Acid Rain",
+            "Summer Indoor Acid Rain",
+            "Fall Indoor Acid Rain",
+            "Winter Indoor Acid Rain"
           ]
         },
         "Blizzard": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "SomeWeather2"
-          ]
-        },
-        "Blizzard Winter": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "SomeWeather2"
+          "BuffIds": ["PDWKittyMuffs", "PDWUVGoggles"],
+          "RemoveBuffIds": ["SomeWeather1", "SomeWeather2"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Blizzard Winter",
+            "Blizzard Indoor",
+            "Spring Indoor Blizzard",
+            "Summer Indoor Blizzard",
+            "Fall Indoor Blizzard",
+            "Winter Indoor Blizzard"
           ]
         },
         "Dry Lightning": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
-        },
-        "Dry Lightning Fall": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
-        },
-        "Dry Lightning Spring": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
-        },
-        "Dry Lightning Summer": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
-        },
-        "Dry Lightning Winter": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
+          "BuffIds": ["PDWShader", "PDWMask"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Dry Lightning Fall",
+            "Dry Lightning Spring",
+            "Dry Lightning Summer",
+            "Dry Lightning Winter",
+            "Dry Lightning Indoor",
+            "Spring Indoor Dry Lightning",
+            "Summer Indoor Dry Lightning",
+            "Fall Indoor Dry Lightning",
+            "Winter Indoor Dry Lightning"
           ]
         },
         "Hail": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "AngryWeather1"
-          ]
-        },
-        "Hailstorm Fall": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "AngryWeather1"
-          ]
-        },
-        "Hailstorm Summer": {
-          "BuffIds": [
-            "PDWKittyMuffs",
-            "PDWUVGoggles"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "AngryWeather1"
+          "BuffIds": ["PDWKittyMuffs", "PDWUVGoggles"],
+          "RemoveBuffIds": ["SomeWeather1", "AngryWeather1"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Hailstorm Fall",
+            "Hailstorm Summer",
+            "Hail Indoor",
+            "Spring Indoor Hail",
+            "Summer Indoor Hail",
+            "Fall Indoor Hail",
+            "Winter Indoor Hail"
           ]
         },
         "Heat Wave": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "AngryWeather2"
-          ]
-        },
-        "Heatwaves Spring": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "AngryWeather2"
-          ]
-        },
-        "Heatwaves Summer": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "AngryWeather2"
+          "BuffIds": ["PDWShader"],
+          "RemoveBuffIds": ["AngryWeather2"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Heatwaves Spring",
+            "Heatwaves Summer",
+            "Heat Wave Indoor",
+            "Spring Indoor Heat Wave",
+            "Summer Indoor Heat Wave",
+            "Fall Indoor Heat Wave",
+            "Winter Indoor Heat Wave"
           ]
         },
         "Heavy Rain": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1"
+          "BuffIds": ["PDWShader"],
+          "RemoveBuffIds": ["SomeWeather1"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Heavy Rain Indoor",
+            "Spring Indoor Rain",
+            "Summer Indoor Rain",
+            "Fall Indoor Rain",
+            "Winter Indoor Rain",
+            "Spring Indoor Heavy Rain",
+            "Summer Indoor Heavy Rain",
+            "Fall Indoor Heavy Rain",
+            "Winter Indoor Heavy Rain"
           ]
         },
         "Locust": {
-          "BuffIds": [
-            "PDWBugNet"
-          ],
-          "RemoveBuffIds": [
-            "Badbugs"
+          "BuffIds": ["PDWBugNet"],
+          "RemoveBuffIds": ["Badbugs"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Locust Indoor",
+            "Spring Indoor Locust",
+            "Summer Indoor Locust",
+            "Fall Indoor Locust",
+            "Winter Indoor Locust"
           ]
         },
         "Meatballs": {
-          "BuffIds": [
-            "PDWShader"
+          "BuffIds": ["PDWShader"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Meatballs Indoor",
+            "Spring Indoor Meatballs",
+            "Summer Indoor Meatballs",
+            "Fall Indoor Meatballs",
+            "Winter Indoor Meatballs"
           ]
         },
         "Mud Rain": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
-        },
-        "Muddy Rain Spring": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
-          ]
-        },
-        "Muddy Rain Summer": {
-          "BuffIds": [
-            "PDWShader",
-            "PDWMask"
+          "BuffIds": ["PDWShader", "PDWMask"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Muddy Rain Spring",
+            "Muddy Rain Summer",
+            "Mud Rain Indoor",
+            "Spring Indoor Mud Rain",
+            "Summer Indoor Mud Rain",
+            "Fall Indoor Mud Rain",
+            "Winter Indoor Mud Rain"
           ]
         },
         "Sandstorm": {
-          "BuffIds": [
-            "PDWUVGoggles"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "SomeWeather2"
+          "BuffIds": ["PDWUVGoggles"],
+          "RemoveBuffIds": ["SomeWeather1", "SomeWeather2"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Sandstorm Indoor",
+            "Spring Indoor Sandstorm",
+            "Summer Indoor Sandstorm",
+            "Fall Indoor Sandstorm",
+            "Winter Indoor Sandstorm"
           ]
         },
         "Smog": {
-          "BuffIds": [
-            "PDWMask"
-          ],
-          "RemoveBuffIds": [
-            "SmoggySinging1"
+          "BuffIds": ["PDWMask"],
+          "RemoveBuffIds": ["SmoggySinging1"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Smog Indoor",
+            "Spring Indoor Smog",
+            "Summer Indoor Smog",
+            "Fall Indoor Smog",
+            "Winter Indoor Smog"
           ]
         },
         "Tornado": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "ExistentialDread"
+          "BuffIds": ["PDWShader"],
+          "RemoveBuffIds": ["ExistentialDread"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Tornado Indoor",
+            "Spring Indoor Tornado",
+            "Summer Indoor Tornado",
+            "Fall Indoor Tornado",
+            "Winter Indoor Tornado"
           ]
         },
         "Tropical Storm": {
-          "BuffIds": [
-            "PDWShader"
-          ],
-          "RemoveBuffIds": [
-            "SomeWeather1",
-            "SomeWeather2"
+          "BuffIds": ["PDWShader"],
+          "RemoveBuffIds": ["SomeWeather1", "SomeWeather2"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Tropical Storm Indoor",
+            "Spring Indoor Tropical Storm",
+            "Summer Indoor Tropical Storm",
+            "Fall Indoor Tropical Storm",
+            "Winter Indoor Tropical Storm"
           ]
         },
         "Wildfire": {
-          "BuffIds": [
-            "PDWMask"
-          ],
-          "RemoveBuffIds": [
-            "SmokeySinging"
+          "BuffIds": ["PDWMask"],
+          "RemoveBuffIds": ["SmokeySinging"],
+          "OutdoorsOnly": true,
+          "Aliases": [
+            "Wildfire Indoor",
+            "Spring Indoor Wildfire",
+            "Summer Indoor Wildfire",
+            "Fall Indoor Wildfire",
+            "Winter Indoor Wildfire"
           ]
         }
       }

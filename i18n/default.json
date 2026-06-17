@@ -1,0 +1,27 @@
+{
+    // GMCM — main page
+    "config.section.settings": "Settings",
+    "config.enabled.name": "Enable outfit buffs",
+    "config.enabled.tooltip": "When enabled, wearing a mapped Fashion Sense outfit automatically applies its buffs or removes debuffs.",
+    "config.show-notifications.name": "Show buff notifications",
+    "config.show-notifications.tooltip": "Show an on-screen message when an outfit buff is applied or removed.",
+    "notification.buff-added": "Added buff: {{buffName}}",
+    "notification.buff-removed": "Removed buff: {{buffName}}",
+    "config.section.mappings": "Active Outfit Mappings",
+    "config.table.header.outfit": "Outfit",
+    "config.table.header.buffs": "+ Buffs",
+    "config.table.header.remove-buffs": "- Buffs",
+    "config.table.header.outdoors-only": "Outdoors Only?",
+    "config.table.header.aliases": "Aliases",
+    "config.table.empty-cell": "—",
+    "config.table.empty-message": "No mappings loaded. Note: Outfit mapping won't show up here until a save is first loaded!",
+    "config.table.yes": "Yes",
+    "config.table.no": "No",
+    "config.table.no-data": "No data.",
+    "config.page.overrides": "Overrides",
+    "config.page.overrides.link-tooltip": "Configure per-mapping overrides for buff application and removal    Note: These settings override Content Patcher defaults.",
+
+    // GMCM — overrides page (outdoors-only section)
+    "config.overrides.outdoors-only.section-title": "Only Apply Buffs Outdoors?",
+    "config.overrides.outdoors-only.tooltip": "When enabled, '{{mappingKey}}' only applies buffs while outdoors. Overrides the Content Patcher default."
+}

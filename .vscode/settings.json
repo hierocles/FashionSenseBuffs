@@ -1,3 +1,6 @@
 {
-    "dotnet.defaultSolution": "FashionSenseBuffs.slnx"
+    "dotnet.defaultSolution": "FashionSenseBuffs.slnx",
+    "files.associations": {
+        "*.json": "jsonc"
+    }
 }

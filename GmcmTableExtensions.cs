@@ -18,8 +18,10 @@ public static class GmcmTableExtensions
         Func<string>? name = null,
         Func<string>? tooltip = null,
         float[]? columnWidthFractions = null,
-        string emptyCellText = "—",
+        Func<string>? getEmptyCellText = null,
         Func<string>? getEmptyMessage = null,
+        Action? beforeMenuOpened = null,
+        Action? beforeMenuClosed = null,
         string? fieldId = null)
     {
         GmcmTableData BuildTable() => new()
@@ -27,7 +29,7 @@ public static class GmcmTableExtensions
             Headers = getHeaders(),
             Rows = getRows(),
             ColumnWidthFractions = columnWidthFractions ?? DefaultColumnFractions,
-            EmptyCellText = emptyCellText,
+            EmptyCellText = getEmptyCellText?.Invoke() ?? "—",
             EmptyMessage = getEmptyMessage?.Invoke(),
         };
 
@@ -36,6 +38,8 @@ public static class GmcmTableExtensions
             name: name ?? (() => ""),
             draw: (b, pos) => GmcmTableRenderer.Draw(b, pos, BuildTable()),
             tooltip: tooltip,
+            beforeMenuOpened: beforeMenuOpened,
+            beforeMenuClosed: beforeMenuClosed,
             height: () => GmcmTableRenderer.MeasureHeight(BuildTable()),
             fieldId: fieldId
         );

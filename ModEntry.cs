@@ -10,21 +10,33 @@ public class ModEntry : Mod
     /// <summary>Asset path exposed for Content Patcher (and other mods) to patch.</summary>
     internal const string AssetPath = "hierocles.FashionSenseBuffs/Outfits";
 
+    /// <summary>GMCM sub-page for per-mapping Content Patcher overrides.</summary>
+    private const string GmcmOverridesPageId = "overrides";
+
     private IFashionSenseApi? _fsApi;
+    private IGenericModConfigMenuApi? _gmcmApi;
     private ModConfig _config = new();
     private Dictionary<string, OutfitBuffEntry> _outfitData = new();
+    private Dictionary<string, OutfitMappingResolver.OutfitLookupEntry> _outfitLookup = new(StringComparer.OrdinalIgnoreCase);
     private string? _currentOutfitId;
     private string? _pendingOutfitId;
     private int _pendingOutfitTicks;
     private readonly List<string> _activeBuffIds = new();
     private readonly List<string> _activeRemoveBuffIds = new();
     private string? _lastLoggedUnmappedOutfit;
+    private string? _lastMappedOutfitId;
+    private bool? _lastWasOutdoors;
+    private readonly HashSet<string> _gmcmRegisteredOutdoorsOnlyKeys = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Consecutive reads required before switching away from the current outfit.</summary>
     private const int OutfitChangeStableTicks = 3;
 
     /// <summary>How often to poll Fashion Sense for outfit-id changes.</summary>
     private const int OutfitPollIntervalTicks = 15;
+
+    private string T(string key) => Helper.Translation.Get(key);
+
+    private string T(string key, object tokens) => Helper.Translation.Get(key, tokens);
 
     public override void Entry(IModHelper helper)
     {
@@ -37,6 +49,7 @@ public class ModEntry : Mod
         helper.Events.GameLoop.UpdateTicked += OnOutfitPollTicked;
         helper.Events.GameLoop.UpdateTicked += OnApplyProtectionBuffs;
         helper.Events.GameLoop.UpdateTicked += OnStripWeatherDebuffs;
+        helper.Events.Player.Warped += OnPlayerWarped;
         helper.Events.Content.AssetRequested += OnAssetRequested;
     }
 
@@ -78,12 +91,18 @@ public class ModEntry : Mod
         Helper.GameContent.InvalidateCache(AssetPath);
         LoadOutfitData();
         ResetOutfitState();
-        ApplyBuffsForCurrentOutfit();
+        ReconcileBuffState(force: true, silent: true);
     }
 
     private void OnReturnedToTitle(object? sender, ReturnedToTitleEventArgs e)
     {
         ResetOutfitState();
+    }
+
+    private void OnPlayerWarped(object? sender, WarpedEventArgs e)
+    {
+        if (!e.IsLocalPlayer) return;
+        ReconcileBuffState(force: true, isOutdoors: e.NewLocation?.IsOutdoors == true, notifyChanges: true);
     }
 
     private void ResetOutfitState()
@@ -93,20 +112,22 @@ public class ModEntry : Mod
         _pendingOutfitTicks = 0;
         _activeBuffIds.Clear();
         _activeRemoveBuffIds.Clear();
+        _lastWasOutdoors = null;
+        _lastMappedOutfitId = null;
     }
 
     private void OnSpriteDirty(object? sender, EventArgs e)
     {
-        if (!CanRun()) return;
-        ApplyBuffsForCurrentOutfit();
+        if (!CanMaintainBuffs()) return;
+        ReconcileBuffState();
     }
 
     private void OnOutfitPollTicked(object? sender, UpdateTickedEventArgs e)
     {
-        if (!CanRun()) return;
+        if (!CanDetectOutfitChange()) return;
 
         if (e.IsMultipleOf(OutfitPollIntervalTicks))
-            ApplyBuffsForCurrentOutfit();
+            ReconcileBuffState();
     }
 
     /// <summary>
@@ -115,14 +136,7 @@ public class ModEntry : Mod
     [EventPriority(EventPriority.High)]
     private void OnApplyProtectionBuffs(object? sender, UpdateTickedEventArgs e)
     {
-        if (!CanRun()) return;
-
-        var readOutfitId = ReadCurrentOutfitId();
-        var protectionOutfitId = GetOutfitIdForProtection(readOutfitId);
-        if (!TryGetMappedEntry(protectionOutfitId, out _, out var entry))
-            return;
-
-        EnsureProtectionBuffs(entry.BuffIds, logApply: false);
+        ReconcileBuffState(stripDebuffs: false);
     }
 
     /// <summary>
@@ -131,22 +145,17 @@ public class ModEntry : Mod
     [EventPriority(EventPriority.Low)]
     private void OnStripWeatherDebuffs(object? sender, UpdateTickedEventArgs e)
     {
-        if (!CanRun()) return;
-
-        var readOutfitId = ReadCurrentOutfitId();
-        var protectionOutfitId = GetOutfitIdForProtection(readOutfitId);
-        if (!TryGetMappedEntry(protectionOutfitId, out _, out var entry))
-            return;
-
-        if (!HasAllProtectionBuffs(entry.BuffIds))
-            return;
-
-        StripConfiguredDebuffs(entry.RemoveBuffIds, logRemove: false);
+        ReconcileBuffState(stripDebuffs: true);
     }
 
-    private bool CanRun()
+    private bool CanDetectOutfitChange()
     {
         return _fsApi is not null && _config.Enabled && Context.IsPlayerFree;
+    }
+
+    private bool CanMaintainBuffs()
+    {
+        return _fsApi is not null && _config.Enabled && Context.IsWorldReady && Game1.player is not null;
     }
 
     private string? ReadCurrentOutfitId()
@@ -155,28 +164,22 @@ public class ModEntry : Mod
         return result.Key ? result.Value : null;
     }
 
-    private void ApplyBuffsForCurrentOutfit()
-    {
-        if (!CanRun()) return;
-
-        var readOutfitId = ReadCurrentOutfitId();
-        var outfitId = ResolveCommittedOutfitId(readOutfitId);
-
-        if (outfitId == _currentOutfitId)
-            return;
-
-        CommitOutfitChange(outfitId);
-    }
-
     /// <summary>
     /// Apply protection immediately when switching to a mapped outfit; debounce only when switching away.
     /// </summary>
-    private string? GetOutfitIdForProtection(string? readOutfitId)
+    private string? ResolveEffectiveOutfitId(string? readOutfitId)
     {
         if (readOutfitId is not null && TryGetMappedEntry(readOutfitId, out _, out _))
             return readOutfitId;
 
-        return ResolveCommittedOutfitId(readOutfitId);
+        var debounced = ResolveCommittedOutfitId(readOutfitId);
+        if (debounced is not null && TryGetMappedEntry(debounced, out _, out _))
+            return debounced;
+
+        if (_lastMappedOutfitId is not null && TryGetMappedEntry(_lastMappedOutfitId, out _, out _))
+            return _lastMappedOutfitId;
+
+        return debounced;
     }
 
     /// <summary>
@@ -202,11 +205,80 @@ public class ModEntry : Mod
         return _pendingOutfitTicks >= OutfitChangeStableTicks ? _pendingOutfitId : _currentOutfitId;
     }
 
-    private void CommitOutfitChange(string? newOutfitId)
+    private void ReconcileBuffState(bool force = false, bool stripDebuffs = false, bool? isOutdoors = null, bool notifyChanges = false, bool silent = false)
     {
+        if (!CanMaintainBuffs()) return;
+
+        var outdoors = isOutdoors ?? (Game1.currentLocation?.IsOutdoors == true);
+        if (_lastWasOutdoors is null)
+            _lastWasOutdoors = outdoors;
+        else if (_lastWasOutdoors != outdoors)
+        {
+            _lastWasOutdoors = outdoors;
+            force = true;
+            notifyChanges = true;
+        }
+
+        var readOutfitId = ReadCurrentOutfitId();
+        var effectiveOutfitId = ResolveEffectiveOutfitId(readOutfitId);
+
+        if (TryGetMappedEntry(effectiveOutfitId, out var syncKey, out var syncEntry)
+            && IsLocationEligible(syncKey, syncEntry, outdoors)
+            && IsMissingRequiredProtectionBuffs(syncEntry))
+        {
+            force = true;
+        }
+
+        var outfitIdChanged = !string.Equals(effectiveOutfitId, _currentOutfitId, StringComparison.Ordinal);
+        var outfitChanged = force || outfitIdChanged;
+
+        if (outfitChanged)
+        {
+            var shouldNotify = notifyChanges || (outfitIdChanged && !silent);
+            ApplyOutfitBuffState(effectiveOutfitId, logChanges: shouldNotify, notifyChanges: shouldNotify, isOutdoors: outdoors);
+            return;
+        }
+
+        if (!TryGetMappedEntry(effectiveOutfitId, out var key, out var entry))
+            return;
+
+        if (!IsLocationEligible(key, entry, outdoors))
+        {
+            if (_activeBuffIds.Count > 0)
+            {
+                RemoveActiveBuffs(notify: notifyChanges);
+                _activeRemoveBuffIds.Clear();
+            }
+
+            return;
+        }
+
+        EnsureProtectionBuffs(entry.BuffIds, logApply: false);
+
+        if (stripDebuffs && HasAllProtectionBuffs(entry.BuffIds))
+            StripConfiguredDebuffs(entry.RemoveBuffIds, logRemove: false);
+    }
+
+    private static bool IsMissingRequiredProtectionBuffs(OutfitBuffEntry entry)
+    {
+        foreach (var buffId in entry.BuffIds)
+        {
+            if (!BuffExists(buffId))
+                continue;
+
+            if (!Game1.player.hasBuff(buffId))
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ApplyOutfitBuffState(string? newOutfitId, bool logChanges, bool notifyChanges = false, bool? isOutdoors = null)
+    {
+        var notify = notifyChanges;
         if (newOutfitId is null)
         {
-            RemoveActiveBuffs();
+            RemoveActiveBuffs(notify: notify);
             _activeRemoveBuffIds.Clear();
             _currentOutfitId = null;
             return;
@@ -214,13 +286,14 @@ public class ModEntry : Mod
 
         if (!TryGetMappedEntry(newOutfitId, out var key, out var entry))
         {
-            if (!string.Equals(_lastLoggedUnmappedOutfit, newOutfitId, StringComparison.OrdinalIgnoreCase))
+            if (logChanges
+                && !string.Equals(_lastLoggedUnmappedOutfit, newOutfitId, StringComparison.OrdinalIgnoreCase))
             {
                 Monitor.Log($"No buff mapping for outfit '{newOutfitId}'.", LogLevel.Debug);
                 _lastLoggedUnmappedOutfit = newOutfitId;
             }
 
-            RemoveActiveBuffs();
+            RemoveActiveBuffs(notify: notify);
             _activeRemoveBuffIds.Clear();
             _currentOutfitId = newOutfitId;
             return;
@@ -228,8 +301,18 @@ public class ModEntry : Mod
 
         _lastLoggedUnmappedOutfit = null;
 
-        EnsureProtectionBuffs(entry.BuffIds, logApply: true, outfitId: newOutfitId, mappingKey: key);
-        StripConfiguredDebuffs(entry.RemoveBuffIds, logRemove: true);
+        if (!IsLocationEligible(key, entry, isOutdoors))
+        {
+            RemoveActiveBuffs(notify: notify);
+            _activeRemoveBuffIds.Clear();
+            _currentOutfitId = newOutfitId;
+            return;
+        }
+
+        EnsureProtectionBuffs(entry.BuffIds, logApply: logChanges, notifyApply: notify, outfitId: newOutfitId, mappingKey: key);
+
+        if (HasAllProtectionBuffs(entry.BuffIds))
+            StripConfiguredDebuffs(entry.RemoveBuffIds, logRemove: logChanges, notifyRemove: notify);
 
         foreach (var buffId in _activeBuffIds.ToList())
         {
@@ -237,24 +320,49 @@ public class ModEntry : Mod
                 continue;
 
             Game1.player.buffs.Remove(buffId);
-            Monitor.Log($"Removed buff '{buffId}' (outfit changed to '{newOutfitId}').", LogLevel.Trace);
+            if (logChanges)
+                Monitor.Log($"Removed buff '{buffId}' (outfit changed to '{newOutfitId}').", LogLevel.Trace);
+            if (notify)
+                ShowBuffRemovedNotification(buffId);
         }
 
         _activeBuffIds.Clear();
         foreach (var buffId in entry.BuffIds)
         {
-            if (BuffExists(buffId))
+            if (BuffExists(buffId) && Game1.player.hasBuff(buffId))
                 _activeBuffIds.Add(buffId);
         }
 
         _activeRemoveBuffIds.Clear();
         _activeRemoveBuffIds.AddRange(entry.RemoveBuffIds);
         _currentOutfitId = newOutfitId;
+        _lastMappedOutfitId = newOutfitId;
+    }
+
+    /// <summary>
+    /// Resolves outdoors-only for a mapping: GMCM override wins, then Content Patcher default.
+    /// Future override types: follow this same GetEffective* pattern.
+    /// </summary>
+    private bool GetEffectiveOutdoorsOnly(string mappingKey, OutfitBuffEntry entry)
+    {
+        if (_config.OutdoorsOnlyOverrides.TryGetValue(mappingKey, out var overrideValue))
+            return overrideValue;
+
+        return entry.OutdoorsOnly;
+    }
+
+    private bool IsLocationEligible(string mappingKey, OutfitBuffEntry entry, bool? isOutdoors = null)
+    {
+        if (!GetEffectiveOutdoorsOnly(mappingKey, entry))
+            return true;
+
+        return isOutdoors ?? (Game1.currentLocation?.IsOutdoors == true);
     }
 
     private void EnsureProtectionBuffs(
         IReadOnlyList<string> buffIds,
         bool logApply,
+        bool notifyApply = false,
         string? outfitId = null,
         string? mappingKey = null)
     {
@@ -272,12 +380,15 @@ public class ModEntry : Mod
 
             Game1.player.applyBuff(buffId);
 
-            if (!logApply)
-                continue;
+            if (logApply)
+            {
+                Monitor.Log(
+                    $"Applied buff '{buffId}' for outfit '{outfitId}' (mapping '{mappingKey}').",
+                    LogLevel.Trace);
+            }
 
-            Monitor.Log(
-                $"Applied buff '{buffId}' for outfit '{outfitId}' (mapping '{mappingKey}').",
-                LogLevel.Trace);
+            if (notifyApply)
+                ShowBuffAddedNotification(buffId);
         }
     }
 
@@ -295,7 +406,7 @@ public class ModEntry : Mod
         return buffIds.Any(BuffExists);
     }
 
-    private void StripConfiguredDebuffs(IReadOnlyList<string> buffIds, bool logRemove)
+    private void StripConfiguredDebuffs(IReadOnlyList<string> buffIds, bool logRemove, bool notifyRemove = false)
     {
         if (buffIds.Count == 0) return;
 
@@ -308,6 +419,8 @@ public class ModEntry : Mod
 
             if (logRemove)
                 Monitor.Log($"Removed buff '{buffId}' for outfit '{_currentOutfitId}'.", LogLevel.Trace);
+            if (notifyRemove)
+                ShowBuffRemovedNotification(buffId);
         }
     }
 
@@ -322,7 +435,7 @@ public class ModEntry : Mod
         if (outfitId is null)
             return false;
 
-        return OutfitMappingResolver.TryResolve(outfitId, _outfitData, out matchedKey, out entry);
+        return OutfitMappingResolver.TryResolve(outfitId, _outfitLookup, out matchedKey, out entry);
     }
 
     private static bool BuffExists(string buffId)
@@ -330,17 +443,117 @@ public class ModEntry : Mod
         return DataLoader.Buffs(Game1.content).ContainsKey(buffId);
     }
 
-    private void RemoveActiveBuffs()
+    private void RemoveActiveBuffs(bool notify = false)
     {
+        if (notify)
+        {
+            foreach (var buffId in _activeBuffIds)
+                ShowBuffRemovedNotification(buffId);
+        }
+
         foreach (var buffId in _activeBuffIds)
             Game1.player.buffs.Remove(buffId);
         _activeBuffIds.Clear();
     }
 
+    private void ShowBuffAddedNotification(string buffId)
+    {
+        if (!_config.ShowBuffNotifications || !Context.IsWorldReady || Game1.player is null)
+            return;
+
+        Game1.addHUDMessage(new HUDMessage(T("notification.buff-added", new { buffName = GetBuffDisplayName(buffId) }))
+        {
+            noIcon = true,
+            timeLeft = 4000f
+        });
+    }
+
+    private void ShowBuffRemovedNotification(string buffId)
+    {
+        if (!_config.ShowBuffNotifications || !Context.IsWorldReady || Game1.player is null)
+            return;
+
+        Game1.addHUDMessage(new HUDMessage(T("notification.buff-removed", new { buffName = GetBuffDisplayName(buffId) }))
+        {
+            noIcon = true,
+            timeLeft = 4000f
+        });
+    }
+
+    private static string GetBuffDisplayName(string buffId)
+    {
+        if (!DataLoader.Buffs(Game1.content).TryGetValue(buffId, out var buffData))
+            return buffId;
+
+        return string.IsNullOrWhiteSpace(buffData.DisplayName) ? buffId : buffData.DisplayName;
+    }
+
     private void LoadOutfitData()
     {
         _outfitData = Helper.GameContent.Load<Dictionary<string, OutfitBuffEntry>>(AssetPath);
-        Monitor.Log($"Loaded {_outfitData.Count} outfit-buff mapping(s) from {AssetPath}.", LogLevel.Debug);
+        _outfitLookup = OutfitMappingResolver.BuildLookup(_outfitData, Monitor);
+        Monitor.Log(
+            $"Loaded {_outfitData.Count} outfit-buff mapping(s) ({_outfitLookup.Count} lookup name(s)) from {AssetPath}.",
+            LogLevel.Debug);
+
+        PruneOutdoorsOnlyOverrides();
+        RefreshGmcmOverrides();
+    }
+
+    /// <summary>
+    /// Register GMCM options for any new per-mapping overrides after outfit data loads.
+    /// Future override types: add a Register*OverrideOptions() call here.
+    /// </summary>
+    private void RefreshGmcmOverrides()
+    {
+        RegisterOutdoorsOnlyOverrideOptions();
+    }
+
+    /// <summary>Remove outdoors-only overrides for mappings that no longer exist in loaded data.</summary>
+    private void PruneOutdoorsOnlyOverrides()
+    {
+        foreach (var key in _config.OutdoorsOnlyOverrides.Keys.ToList())
+        {
+            if (!_outfitData.ContainsKey(key))
+                _config.OutdoorsOnlyOverrides.Remove(key);
+        }
+    }
+
+    private void RegisterOutdoorsOnlyOverrideOptions()
+    {
+        if (_gmcmApi is null || _outfitData.Count == 0) return;
+
+        // Switch GMCM context to the shared overrides page before adding options.
+        _gmcmApi.AddPage(ModManifest, GmcmOverridesPageId, () => T("config.page.overrides"));
+
+        foreach (var mappingKey in _outfitData.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
+        {
+            if (!_gmcmRegisteredOutdoorsOnlyKeys.Add(mappingKey))
+                continue;
+
+            _gmcmApi.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => GetEffectiveOutdoorsOnlyForMapping(mappingKey),
+                setValue: value => SetOutdoorsOnlyOverride(mappingKey, value),
+                name: () => mappingKey,
+                tooltip: () => T("config.overrides.outdoors-only.tooltip", new { mappingKey }),
+                fieldId: $"OutdoorsOnlyOverride.{mappingKey}"
+            );
+        }
+    }
+
+    private bool GetEffectiveOutdoorsOnlyForMapping(string mappingKey)
+    {
+        if (!_outfitData.TryGetValue(mappingKey, out var entry))
+            return false;
+
+        return GetEffectiveOutdoorsOnly(mappingKey, entry);
+    }
+
+    private void SetOutdoorsOnlyOverride(string mappingKey, bool value)
+    {
+        _config.OutdoorsOnlyOverrides[mappingKey] = value;
+        ReconcileBuffState(force: true, notifyChanges: true);
     }
 
     private void RegisterGmcm()
@@ -348,13 +561,19 @@ public class ModEntry : Mod
         var gmcm = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
         if (gmcm is null) return;
 
+        _gmcmApi = gmcm;
+
         gmcm.Register(
             mod: ModManifest,
-            reset: () => _config = new ModConfig(),
+            reset: () =>
+            {
+                _config = new ModConfig();
+                ReconcileBuffState(force: true, silent: true);
+            },
             save: () => Helper.WriteConfig(_config)
         );
 
-        gmcm.AddSectionTitle(ModManifest, () => "Settings");
+        gmcm.AddSectionTitle(ModManifest, () => T("config.section.settings"));
 
         gmcm.AddBoolOption(
             mod: ModManifest,
@@ -368,15 +587,37 @@ public class ModEntry : Mod
                     _activeRemoveBuffIds.Clear();
                 }
             },
-            name: () => "Enable outfit buffs",
-            tooltip: () => "When enabled, wearing a mapped Fashion Sense outfit automatically applies its buffs or removes debuffs."
+            name: () => T("config.enabled.name"),
+            tooltip: () => T("config.enabled.tooltip")
         );
 
-        gmcm.AddSectionTitle(ModManifest, () => "Active Outfit Mappings");
+        gmcm.AddBoolOption(
+            mod: ModManifest,
+            getValue: () => _config.ShowBuffNotifications,
+            setValue: v => _config.ShowBuffNotifications = v,
+            name: () => T("config.show-notifications.name"),
+            tooltip: () => T("config.show-notifications.tooltip")
+        );
+
+        gmcm.AddPageLink(
+            mod: ModManifest,
+            pageId: GmcmOverridesPageId,
+            text: () => T("config.page.overrides"),
+            tooltip: () => T("config.page.overrides.link-tooltip")
+        );
+
+        gmcm.AddSectionTitle(ModManifest, () => T("config.section.mappings"));
 
         gmcm.AddTable(
             mod: ModManifest,
-            getHeaders: () => new[] { "Outfit ID", "Apply Buffs", "Remove Buffs" },
+            getHeaders: () => new[]
+            {
+                T("config.table.header.outfit"),
+                T("config.table.header.buffs"),
+                T("config.table.header.remove-buffs"),
+                T("config.table.header.outdoors-only"),
+                T("config.table.header.aliases")
+            },
             getRows: () => _outfitData
                 .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(kvp => new[]
@@ -385,12 +626,26 @@ public class ModEntry : Mod
                     string.Join(", ", kvp.Value.BuffIds),
                     kvp.Value.RemoveBuffIds.Count > 0
                         ? string.Join(", ", kvp.Value.RemoveBuffIds)
+                        : "",
+                    GetEffectiveOutdoorsOnly(kvp.Key, kvp.Value)
+                        ? T("config.table.yes")
+                        : T("config.table.no"),
+                    kvp.Value.Aliases.Count > 0
+                        ? string.Join(", ", kvp.Value.Aliases)
                         : ""
                 })
                 .ToList(),
-            emptyCellText: "—",
-            getEmptyMessage: () =>
-                "No mappings loaded. Note: Outfit mapping won't show up here until a save is first loaded!"
+            columnWidthFractions: new[] { 0.22f, 0.24f, 0.18f, 0.12f, 0.24f },
+            getEmptyCellText: () => T("config.table.empty-cell"),
+            getEmptyMessage: () => T("config.table.empty-message")
         );
+
+        gmcm.AddPage(ModManifest, GmcmOverridesPageId, () => T("config.page.overrides"));
+
+        // Outdoors-only section (first override type). Future types: AddSectionTitle here once at
+        // registration, then register per-mapping options from a dedicated Register*OverrideOptions()
+        // method called by RefreshGmcmOverrides(). Use a per-type _gmcmRegistered*Keys set so new
+        // mappings can be added on save load without duplicating section titles or options.
+        gmcm.AddSectionTitle(ModManifest, () => T("config.overrides.outdoors-only.section-title"));
     }
 }

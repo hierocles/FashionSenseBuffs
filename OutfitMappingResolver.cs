@@ -1,111 +1,76 @@
-using System.Text.RegularExpressions;
+using StardewModdingAPI;
 
 namespace FashionSenseBuffs;
 
 /// <summary>
-/// Resolves Fashion Sense outfit names to buff mappings, including Fern/ESWF seasonal and indoor variants.
+/// Builds a flat outfit-name lookup from primary keys and explicit <see cref="OutfitBuffEntry.Aliases"/>.
 /// </summary>
 internal static class OutfitMappingResolver
 {
-    private static readonly (string Pattern, string Replacement)[] NameNormalizations =
-    {
-        ("Heatwaves", "Heat Wave"),
-        ("Hailstorm", "Hail"),
-        ("Muddy Rain", "Mud Rain"),
-    };
+    public readonly record struct OutfitLookupEntry(string MatchedKey, OutfitBuffEntry Entry);
 
     /// <summary>
-    /// Finds a mapping for <paramref name="outfitId"/> using exact match, indoor stripping,
-    /// Fern preset name normalizations, and longest-prefix fallback (e.g. "Acid Rain Spring" → "Acid Rain").
+    /// Indexes each primary key and alias (case-insensitive). Duplicate names log a debug warning; last wins.
     /// </summary>
+    public static Dictionary<string, OutfitLookupEntry> BuildLookup(
+        IReadOnlyDictionary<string, OutfitBuffEntry> mappings,
+        IMonitor? monitor = null)
+    {
+        var lookup = new Dictionary<string, OutfitLookupEntry>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (key, entry) in mappings)
+            RegisterName(lookup, key, key, entry, monitor);
+
+        foreach (var (key, entry) in mappings)
+        {
+            foreach (var alias in entry.Aliases)
+            {
+                if (string.IsNullOrWhiteSpace(alias))
+                    continue;
+
+                RegisterName(lookup, alias, key, entry, monitor);
+            }
+        }
+
+        return lookup;
+    }
+
+    /// <summary>Resolves <paramref name="outfitId"/> by exact name match against the lookup.</summary>
     public static bool TryResolve(
         string outfitId,
-        IReadOnlyDictionary<string, OutfitBuffEntry> mappings,
+        IReadOnlyDictionary<string, OutfitLookupEntry> lookup,
         out string matchedKey,
         out OutfitBuffEntry entry)
     {
         matchedKey = null!;
         entry = null!;
 
-        if (string.IsNullOrWhiteSpace(outfitId) || mappings.Count == 0)
+        if (string.IsNullOrWhiteSpace(outfitId) || lookup.Count == 0)
             return false;
 
-        foreach (var candidate in GetCandidates(outfitId))
-        {
-            var exactKey = mappings.Keys.FirstOrDefault(k =>
-                string.Equals(k, candidate, StringComparison.OrdinalIgnoreCase));
-            if (exactKey is not null)
-            {
-                matchedKey = exactKey;
-                entry = mappings[exactKey];
-                return true;
-            }
+        if (!lookup.TryGetValue(outfitId, out var match))
+            return false;
 
-            var prefixKey = mappings.Keys
-                .Where(k =>
-                    candidate.Length > k.Length
-                    && candidate.StartsWith(k, StringComparison.OrdinalIgnoreCase)
-                    && candidate[k.Length] == ' ')
-                .MaxBy(k => k.Length);
-
-            if (prefixKey is not null)
-            {
-                matchedKey = prefixKey;
-                entry = mappings[prefixKey];
-                return true;
-            }
-        }
-
-        return false;
+        matchedKey = match.MatchedKey;
+        entry = match.Entry;
+        return true;
     }
 
-    private static IEnumerable<string> GetCandidates(string outfitId)
+    private static void RegisterName(
+        Dictionary<string, OutfitLookupEntry> lookup,
+        string name,
+        string matchedKey,
+        OutfitBuffEntry entry,
+        IMonitor? monitor)
     {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var candidate in EnumerateCandidates(outfitId))
+        if (lookup.TryGetValue(name, out var existing)
+            && !string.Equals(existing.MatchedKey, matchedKey, StringComparison.OrdinalIgnoreCase))
         {
-            if (seen.Add(candidate))
-                yield return candidate;
-        }
-    }
-
-    private static IEnumerable<string> EnumerateCandidates(string outfitId)
-    {
-        yield return outfitId;
-
-        if (TryStripIndoorSuffix(outfitId, out var withoutIndoor))
-            yield return withoutIndoor;
-
-        var normalized = NormalizeName(outfitId);
-        if (!string.Equals(normalized, outfitId, StringComparison.OrdinalIgnoreCase))
-        {
-            yield return normalized;
-
-            if (TryStripIndoorSuffix(normalized, out var normalizedWithoutIndoor))
-                yield return normalizedWithoutIndoor;
-        }
-    }
-
-    private static string NormalizeName(string outfitId)
-    {
-        var result = outfitId;
-        foreach (var (pattern, replacement) in NameNormalizations)
-            result = Regex.Replace(result, pattern, replacement, RegexOptions.IgnoreCase);
-        return result;
-    }
-
-    private static bool TryStripIndoorSuffix(string outfitId, out string stripped)
-    {
-        const string suffix = " Indoor";
-        if (outfitId.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)
-            && outfitId.Length > suffix.Length)
-        {
-            stripped = outfitId[..^suffix.Length];
-            return true;
+            monitor?.Log(
+                $"Duplicate outfit mapping for '{name}' ('{existing.MatchedKey}' vs '{matchedKey}'); using '{matchedKey}'.",
+                LogLevel.Debug);
         }
 
-        stripped = outfitId;
-        return false;
+        lookup[name] = new OutfitLookupEntry(matchedKey, entry);
     }
 }
